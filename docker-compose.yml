@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: news_postgres
+    environment:
+      POSTGRES_DB: news_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: KffGf0304*
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - news_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d news_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: news_keycloak
+    environment:
+      KEYCLOAK_LOGLEVEL: DEBUG
+      ROOT_LOGLEVEL: DEBUG
+      QUARKUS_LOG_CATEGORY__ORG_KEYCLOAK_EVENTS__LEVEL: DEBUG
+      QUARKUS_LOG_CATEGORY__ORG_KEYCLOAK_SERVICES__LEVEL: DEBUG
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: KffGf0304*
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: KffGf0304*
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    ports:
+      - "8083:8080"
+    command: start-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - news_network
+
+  news-network:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: news_network_app
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/news_db
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: KffGf0304*
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: news-network
+      KEYCLOAK_RESOURCE: news-network-client
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - news_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+
+networks:
+  news_network:
+    driver: bridge 

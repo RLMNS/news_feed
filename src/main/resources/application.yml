@@ -1,0 +1,60 @@
+server:
+  port: 8081
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  default-produces-media-type: application/json
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/news_db
+    username: admin
+    password: KffGf0304*
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        cache:
+          use_second_level_cache: true
+          region.factory_class: org.hibernate.cache.jcache.internal.JCacheRegionFactory
+          use_query_cache: true
+        javax.cache:
+          provider: org.ehcache.jsr107.EhcacheCachingProvider
+          uri: ehcache.xml
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8083/realms/master
+
+logging:
+  level:
+    org.springframework.security: debug
+
+keycloak:
+  server-url: http://localhost:8083
+  realm: master
+  resource: news
+  credentials:
+    secret: dKDSBJBlBrS1GSGEhR3r7UudgTPmp7Os
+keycloak-admin:
+  username: admin
+  password: KffGf0304*
